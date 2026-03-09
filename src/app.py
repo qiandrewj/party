@@ -1,4 +1,4 @@
-import json, csv
+import csv
 import os
 from dotenv import load_dotenv
 from flask import Flask
@@ -6,7 +6,7 @@ from flask import Flask
 load_dotenv()
 from flask_cors import CORS
 from models import db, Recipe
-# from routes import register_routes
+from routes import register_routes
 
 # src/ directory and project root (one level up)
 current_directory = os.path.dirname(os.path.abspath(__file__))
@@ -26,7 +26,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
 # Register routes
-# register_routes(app)
+register_routes(app)
 
 # Function to initialize database, change this to your own database initialization logic
 def init_db():

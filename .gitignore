@@ -3,7 +3,6 @@ env/
 Docker/__pycache__
 
 venv/
-data/
 
 *.pyc
 __pycache__/

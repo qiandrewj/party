@@ -38,7 +38,7 @@ def init_db():
             print("Database already initialized with", Recipe.query.count(), 'recipes')
             return
         
-        file_path = 'data/recipes_sample.csv'
+        file_path = 'recipes_sample.csv'
         with open(file_path, 'r', encoding='utf-8') as file:
             csv_reader = csv.reader(file)
 

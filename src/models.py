@@ -15,3 +15,13 @@ class Recipe(db.Model):
 
     def __repr__(self):
         return f'Recipe {self.id}: {self.name}'
+    
+class Playlist(db.Model):
+    __tablename__ = 'playlists'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), nullable=False)
+    songs = db.Column(db.String(1028), nullable=False)
+    artists = db.Column(db.String(1028), nullable=False) # len(songs) == len(artists)
+
+    def __repr__(self):
+        return f'Playlist {self.id}: {self.name}'

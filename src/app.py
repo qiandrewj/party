@@ -47,15 +47,14 @@ def init_db():
             rows = recipe_data[1:]
             for i, row in enumerate(rows):
                 try:
+                    cleaned_desc = " ".join(row[9].split())
                     recipe = Recipe(
                         id=i,
+                        site_id=row[1],
                         name=row[0],
                         minutes=row[2],
                         tags=row[5],
-                        n_steps=row[7],
-                        steps=row[8],
-                        description=row[9],
-                        n_ingredients=row[11],
+                        description=cleaned_desc,
                         ingredients=row[10]
                     )
                     db.session.add(recipe)

@@ -5,6 +5,16 @@ import Chat from "../Chat";
 import { Recipe } from "../types";
 import "./InputPage.css";
 
+const DIETARY_FILTERS = [
+  "vegetarian",
+  "vegan",
+  "gluten-free",
+  "dairy-free",
+  "nut-free",
+];
+
+const COURSE_FILTERS = ["appetizer", "entrée", "dessert", "beverage"];
+
 export function InputPage() {
   const navigate = useNavigate();
   const [themeWords, setThemeWords] = useState("");
@@ -12,6 +22,8 @@ export function InputPage() {
   const [keyword2, setKeyword2] = useState("");
   const [length, setLength] = useState("");
   const [ingredients, setIngredients] = useState("");
+  const [dietary, setDietary] = useState<string[]>([]);
+  const [courses, setCourses] = useState<string[]>([]);
   const [useLlm, setUseLlm] = useState<boolean | null>(null);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
 
@@ -22,12 +34,26 @@ export function InputPage() {
       .catch(() => setUseLlm(false));
   }, []);
 
+  const toggleFilter = (
+    value: string,
+    current: string[],
+    set: (v: string[]) => void,
+  ) => {
+    set(
+      current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value],
+    );
+  };
+
   const handleSearch = async (value: string): Promise<void> => {
     if (value.trim() === "") {
       setRecipes([]);
       return;
     }
-    const response = await fetch(`/api/recipes?name=${encodeURIComponent(value)}`);
+    const response = await fetch(
+      `/api/recipes?name=${encodeURIComponent(value)}`,
+    );
     const data: Recipe[] = await response.json();
     setRecipes(data);
   };
@@ -40,7 +66,6 @@ export function InputPage() {
     <div className="input-page">
       <h1 className="input-heading">BRING THE PARTY</h1>
 
-      {/* ── Mad-lib prompt ── */}
       <p className="prompt-wrap">
         <span className="prompt-quote">"</span>
         i'm looking to host a{" "}
@@ -51,8 +76,8 @@ export function InputPage() {
           placeholder="theme words"
           className="prompt-input prompt-input--lg"
           aria-label="theme words"
-        />
-        {" "}dinner party. i want the party to follow a{" "}
+        />{" "}
+        dinner party. i want the party to follow a{" "}
         <input
           type="text"
           value={keyword1}
@@ -60,8 +85,8 @@ export function InputPage() {
           placeholder="keyword"
           className="prompt-input prompt-input--md"
           aria-label="first keyword"
-        />
-        {" "}theme and use{" "}
+        />{" "}
+        theme and use{" "}
         <input
           type="text"
           value={keyword2}
@@ -69,8 +94,8 @@ export function InputPage() {
           placeholder="keyword"
           className="prompt-input prompt-input--md"
           aria-label="second keyword"
-        />
-        {" "}decor. i want my menu to take{" "}
+        />{" "}
+        decor. i want my menu to take{" "}
         <input
           type="text"
           value={length}
@@ -78,8 +103,8 @@ export function InputPage() {
           placeholder="length"
           className="prompt-input prompt-input--sm"
           aria-label="cook time"
-        />
-        {" "}amount of time to cook. i want to use{" "}
+        />{" "}
+        amount of time to cook. i want to use{" "}
         <input
           type="text"
           value={ingredients}
@@ -87,44 +112,67 @@ export function InputPage() {
           placeholder="ingredients"
           className="prompt-input prompt-input--md"
           aria-label="ingredients"
-        />
-        {" "}in my recipe.
+        />{" "}
+        in my recipe.
         <span className="prompt-quote">"</span>
       </p>
 
-      {/* ── Filter chips ── */}
-      <div className="filter-row" role="group" aria-label="filters">
-        <button className="filter-chip">FILTER ONE</button>
-        <button className="filter-chip">FILTER TWO</button>
-        <button className="filter-chip">FILTER THREE</button>
+      {/* ── Filters ── */}
+      <div className="filter-section">
+        <div
+          className="filter-group"
+          role="group"
+          aria-label="dietary restrictions"
+        >
+          {DIETARY_FILTERS.map((f) => (
+            <button
+              key={f}
+              className={`filter-chip${dietary.includes(f) ? " active" : ""}`}
+              onClick={() => toggleFilter(f, dietary, setDietary)}
+              aria-pressed={dietary.includes(f)}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+
+        <div className="filter-group" role="group" aria-label="course type">
+          {COURSE_FILTERS.map((f) => (
+            <button
+              key={f}
+              className={`filter-chip${courses.includes(f) ? " active" : ""}`}
+              onClick={() => toggleFilter(f, courses, setCourses)}
+              aria-pressed={courses.includes(f)}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* ── Decorative image (positioned relative to page, hidden on mobile) ── */}
-      <div className="food-decor" aria-hidden="true">
-        <img src={imgFood} alt="" />
-      </div>
-
-      {/* ── CTA ── */}
-      <div className="cta-row">
+      <div className="bottom-row">
         <button onClick={handleGetHosting} className="get-hosting-btn">
           get hosting →
         </button>
+        <div className="food-decor" aria-hidden="true">
+          <img src={imgFood} alt="" />
+        </div>
       </div>
 
-      {/* ── Recipe results ── */}
       {recipes.length > 0 && (
         <div className="recipe-results">
           {recipes.map((recipe, index) => (
             <div key={index} className="recipe-card">
               <p className="recipe-card__name">{recipe.name}</p>
               <p className="recipe-card__desc">{recipe.description}</p>
-              <p className="recipe-card__meta">Minutes: {String(recipe.minutes)}</p>
+              <p className="recipe-card__meta">
+                Minutes: {String(recipe.minutes)}
+              </p>
             </div>
           ))}
         </div>
       )}
 
-      {/* ── Chat dock ── */}
       {useLlm && (
         <div className="chat-dock">
           <Chat onSearchTerm={handleSearch} />

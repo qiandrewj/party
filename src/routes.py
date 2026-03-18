@@ -33,7 +33,7 @@ def cosine_search_recipes(query):
         query = "food"
     recipes = db.session.query(Recipe).all()
     vectorizer, doc_by_vocab = matching.build_tfidf_index(recipes, "recipe")
-    matches = matching.query_data(query, recipes, "recipe", vectorizer, doc_by_vocab)
+    matches = matching.query_data(query, recipes, "recipe", vectorizer, doc_by_vocab, 0.0)
     return matches[: 5]
 
 def cosine_search_playlists(query):
@@ -41,7 +41,7 @@ def cosine_search_playlists(query):
         query = "music"
     playlists = db.session.query(Playlist).all()
     vectorizer, doc_by_vocab = matching.build_tfidf_index(playlists, "playlist")
-    matches = matching.query_data(query, playlists, "playlist", vectorizer, doc_by_vocab)
+    matches = matching.query_data(query, playlists, "playlist", vectorizer, doc_by_vocab, 0.7)
     return matches[: 3]
 
 def register_routes(app):

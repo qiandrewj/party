@@ -34,6 +34,8 @@ export function InputPage() {
       .catch(() => setUseLlm(false));
   }, []);
 
+  const query = [themeWords, keyword1, keyword2, ingredients].filter(Boolean).join(" ");
+
   const toggleFilter = (
     value: string,
     current: string[],

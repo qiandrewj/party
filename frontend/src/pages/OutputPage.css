@@ -104,14 +104,14 @@
 @media (min-width: 900px) {
   .candles-aside {
     display: flex;
-    align-items: flex-end;
-    justify-content: flex-end;
-    align-self: end;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
   }
 }
 
 .candles-img {
-  width: clamp(17rem, 22vw, 26rem);
+  width: 520px;
   height: auto;
   object-fit: contain;
   display: block;

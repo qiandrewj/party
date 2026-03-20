@@ -35,7 +35,9 @@ export function InputPage() {
       .catch(() => setUseLlm(false));
   }, []);
 
-  const query = [themeWords, keyword1, keyword2, ingredients].filter(Boolean).join(" ");
+  const query = [themeWords, keyword1, keyword2, ingredients]
+    .filter(Boolean)
+    .join(" ");
 
   const toggleFilter = (
     value: string,
@@ -174,7 +176,11 @@ export function InputPage() {
       </div>
 
       <div className="bottom-row">
-        <button onClick={handleGetHosting} className="get-hosting-btn" disabled={loading}>
+        <button
+          onClick={handleGetHosting}
+          className="get-hosting-btn"
+          disabled={loading}
+        >
           {loading ? "loading..." : "get hosting →"}
         </button>
         <div className="food-decor" aria-hidden="true">

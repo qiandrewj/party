@@ -46,7 +46,6 @@ export function LoadingPage() {
         setDots(" .".repeat(dotCount));
       } else {
         clearInterval(dotInterval);
-        // Waits a bit before moving to next message
         setTimeout(() => {
           setMessageIndex((prev) => (prev + 1) % loadingMessages.length);
           setDisplayText("");
@@ -60,10 +59,10 @@ export function LoadingPage() {
   }, [isTypingDots]);
 
   useEffect(() => {
-    // Navigate to output page after 10 seconds, forwarding the state from InputPage
+    // Navigate to output page after 8 seconds, forwarding the state from InputPage
     const navigationTimeout = setTimeout(() => {
       navigate("/output", { state: location.state });
-    }, 10000);
+    }, 8000);
 
     return () => clearTimeout(navigationTimeout);
   }, [navigate, location.state]);

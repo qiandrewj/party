@@ -34,7 +34,7 @@ def init_recipes():
             print("Database already initialized with", Recipe.query.count(), 'recipes')
             return
             
-        file_path = os.path.join(current_directory, 'recipes_sample.csv')
+        file_path = os.path.join(current_directory, 'cleaned_recipes.csv')
         with open(file_path, 'r', encoding='utf-8') as file:
             csv_reader = csv.reader(file)
 
@@ -43,7 +43,8 @@ def init_recipes():
             rows = recipe_data[1:]
             for i, row in enumerate(rows):
                 try:
-                    cleaned_desc = " ".join(row[9].split())
+                    desc_words = row[9].split()
+                    cleaned_desc = " ".join(desc_words)
                     recipe = Recipe(
                         id=i,
                         site_id=row[1],

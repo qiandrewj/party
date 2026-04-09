@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from "react-router";
 import imgCandles from "../assets/table3.png";
 import imgBread from "../assets/bread.png";
 import imgCheese from "../assets/cheese.png";
+import linkIcon from "../assets/external-link.png";
 import { Recipe, Playlist } from "../types";
 import "./OutputPage.css";
 
@@ -52,15 +53,15 @@ export function OutputPage() {
               recipes.map((recipe) => (
                 <div key={recipe.name} className="recipe-entry">
                   <div className="recipe-entry__header">
-                    <p className="recipe-entry__title">
-                      <a href={recipe.link} target="_blank" rel="noopener noreferrer" className="underline">
-                        {recipe.name}
-                      </a>
-                    </p>
+                    <p className="recipe-entry__title">{recipe.name}</p>
                     <span className="recipe-entry__dots" aria-hidden="true" />
+                    <a href={recipe.link} target="_blank" rel="noopener noreferrer">
+                      <img alt="" className="link-icon" src={linkIcon} />
+                    </a>
                   </div>
                   <p className="recipe-entry__body">{recipe.description}</p>
-                  <p className="recipe-entry__meta">{recipe.minutes} min</p>
+                  <p className="recipe-entry__min">{recipe.minutes} min</p>
+                  <p className="recipe-entry__meta">Ingredients: {recipe.ingredients.replace(/['\[\]]/g, '')}</p>
                 </div>
               ))
             )}
@@ -76,45 +77,36 @@ export function OutputPage() {
         </div>
       </section>
 
-      {/* decor and music section */}
-      <section className="section-bottom">
-        <div className="left-col">
-          <div className="decor-col">
-            <h2 className="section-heading">DECOR</h2>
-          </div>
-          <div className="food-images">
-            <button onClick={handleRoundTwo} className="round-two-btn">
-              ← round two
-            </button>
-            <img alt="" className="bread-img" src={imgBread} />
-            <img alt="" className="cheese-img" src={imgCheese} />
-          </div>
+      <div className="tunes-col">
+        <h2 className="section-heading">TUNES</h2>
+        <div className="playlist">
+          {playlist ? (
+            <>
+              <p className="playlist-title">{playlist.name}</p>
+              {songList.length === 0 ? (
+                <p className="body-text">No songs found.</p>
+              ) : (
+                songList.map((song, i) => (
+                  <p key={i} className="playlist-row">
+                    <span className="song-name">{song}</span>
+                    <span className="recipe-entry__dots" aria-hidden="true" />
+                    <span className="artist-name">{artistList[i] || ""}</span>
+                  </p>
+                ))
+              )}
+            </>
+          ) : (
+            <p className="body-text">No playlist found.</p>
+          )}
         </div>
-
-        <div className="tunes-col">
-          <h2 className="section-heading">TUNES</h2>
-          <div className="playlist">
-            {playlist ? (
-              <>
-                <p className="playlist-title">{playlist.name}</p>
-                {songList.length === 0 ? (
-                  <p className="body-text">No songs found.</p>
-                ) : (
-                  songList.map((song, i) => (
-                    <p key={i} className="playlist-row">
-                      <span className="song-name">{song}</span>
-                      <span className="recipe-entry__dots" aria-hidden="true" />
-                      <span className="artist-name">{artistList[i] || ""}</span>
-                    </p>
-                  ))
-                )}
-              </>
-            ) : (
-              <p className="body-text">No playlist found.</p>
-            )}
-          </div>
-        </div>
-      </section>
+      </div>
+      <div className="food-images">
+        <button onClick={handleRoundTwo} className="round-two-btn">
+          ← round two
+        </button>
+        <img alt="" className="bread-img" src={imgBread} />
+        <img alt="" className="cheese-img" src={imgCheese} />
+      </div>
     </div>
   );
 }

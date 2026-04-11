@@ -54,8 +54,8 @@ export function OutputPage() {
                 <div key={recipe.name} className="recipe-entry">
                   <div className="recipe-entry__header">
                     <div className="recipe-link">
-                      <p className="recipe-entry__title">{recipe.name}</p>
                       <a href={recipe.link} target="_blank" rel="noopener noreferrer">
+                        <p className="recipe-entry__title">{recipe.name}</p>
                         <img alt="" className="link-icon" src={linkIcon} />
                       </a>
                     </div>

@@ -15,7 +15,7 @@ USE_LLM = False
 
 DIETARY_FILTERS = {
     "vegetarian": {
-        "include": ["vegetarian"],
+        "include": ["vegetarian", "vegan"],
         "exclude": ["beef", "chicken", "pork", "fish", "seafood", "bacon", "ham", "meat", "veal", "shrimp", "salmon", "tuna", "turkey", "duck"]
     },
     "vegan": {
@@ -27,8 +27,8 @@ DIETARY_FILTERS = {
         "exclude": ["wheat", "flour", "bread", "pasta"]
     },
     "dairy-free": {
-        "include": ["dairy-free"],
-        "exclude": ["milk", "cheese", "butter", "cream", "yogurt"]
+        "include": ["dairy-free", "vegan"],
+        "exclude": ["milk", "cheese", "yogurt", "cream"]
     },
     "nut-free": {
         "include": ["nut-free"],
@@ -44,7 +44,7 @@ COURSE_FILTERS = {
     "include": ["main-dish", "dinner", "lunch"]
   },
   "dessert": {
-    "include": ["desserts", "cakes", "brownies", "pies", "ice-cream"]
+    "include": ["desserts", "cakes", "brownies", "pies", "ice-cream", "frozen-desserts"]
   },
   "beverage": {
     "include": ["beverages"],
@@ -67,7 +67,7 @@ def json_search(query):
     return matches
 
 
-def filter_recipes(recipes, filters, filter_type):
+def filter_recipes(recipes, filters, filter_type, force_include=False):
     if not filters:
         return recipes
     
@@ -79,11 +79,18 @@ def filter_recipes(recipes, filters, filter_type):
             config = filter_type.get(selected) or {}
             include_tags = config.get("include", [])
             exclude_tags = config.get("exclude", [])
+            
 
             if include_tags and all(tag in r.tags for tag in include_tags):
                 include_override = True
                 break
+            if include_tags and force_include and not any(tag in r.tags for tag in include_tags):
+                skip = True
+                break
             if exclude_tags and (any(tag in r.tags for tag in exclude_tags) or any (ingredient in r.ingredients for ingredient in exclude_tags)):
+                # override for dairy-free ice cream since many recipes are tagged ice-cream but are still dairy-free
+                if ("dairy-free" in filters and "ice-cream" in r.tags and not any (ingredient in r.ingredients for ingredient in exclude_tags)):
+                    continue
                 skip = True
                 break
 
@@ -100,8 +107,8 @@ def cosine_search_recipes(query, dietary_filters, course_filters):
         query = "food"
     recipes = db.session.query(Recipe).all()
     recipes = filter_recipes(recipes, dietary_filters, DIETARY_FILTERS)
-    recipes = filter_recipes(recipes, course_filters, COURSE_FILTERS)
-    # print(f"Filtered from 2000 to {len(recipes)} recipes based on dietary filters: {dietary_filters} and course filters: {course_filters}")
+    recipes = filter_recipes(recipes, course_filters, COURSE_FILTERS, force_include=True)
+    print(f"Filtered from 2000 to {len(recipes)} recipes based on dietary filters: {dietary_filters} and course filters: {course_filters}")
 
     vectorizer, doc_by_vocab = matching.build_tfidf_index(recipes, "recipe")
     if vectorizer is None or doc_by_vocab is None:

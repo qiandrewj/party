@@ -41,6 +41,11 @@
   line-height: 1.1;
 }
 
+.mode-toggle-container {
+  display: grid;
+  align-items: center;
+}
+
 .mode-toggle-group {
   font-family: var(--font-body);
   font-size: clamp(1rem, 1.1vw, 1rem);
@@ -55,6 +60,21 @@
   align-items: center;
   gap: 6px;
   position: relative;
+}
+
+.clear-input-btn {
+  font-family: var(--font-body);
+  font-size: clamp(0.75rem, 1vw, 0.75rem);
+  font-weight: 500;
+  color: var(--color-text-dark);
+  background: transparent;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.clear-input-btn:hover {
+  /* text-decoration: underline; */
+  opacity: 0.8;
 }
 
 .mode-toggle {

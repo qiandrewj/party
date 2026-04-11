@@ -36,7 +36,7 @@ export function OutputPage() {
     : [];
 
   const handleRoundTwo = () => {
-    navigate("/");
+    navigate("/", { state });
   };
 
   return (

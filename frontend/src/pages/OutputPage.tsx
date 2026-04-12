@@ -3,12 +3,166 @@ import imgCandles from "../assets/table3.png";
 import imgBread from "../assets/bread.png";
 import imgCheese from "../assets/cheese.png";
 import linkIcon from "../assets/link.svg";
-import { Recipe, Playlist } from "../types";
+import { DimInfo, SVDRecipe, Playlist } from "../types";
 import "./OutputPage.css";
+import { useState } from "react";
 
 interface OutputState {
-  recipes: Recipe[];
+  recipes: SVDRecipe[];
   playlist: Playlist | null;
+}
+
+// Mini sparkline: renders a bar chart of the first N latent dimensions
+function DimSparkline({
+  docMags,
+  queryMags,
+  sharedDims,
+}: {
+  docMags: number[];
+  queryMags: number[];
+  sharedDims: DimInfo[];
+}) {
+  const N = Math.min(docMags.length, queryMags.length, 40);
+  const sharedSet = new Set(sharedDims.map((d) => d.dim));
+
+  const maxAbs = Math.max(
+    ...docMags.slice(0, N).map(Math.abs),
+    ...queryMags.slice(0, N).map(Math.abs),
+    0.001
+  );
+
+  return (
+    <div className="sparkline-wrap" aria-hidden="true">
+      <div className="sparkline-row">
+        {Array.from({ length: N }).map((_, i) => {
+          const val = docMags[i] ?? 0;
+          const height = Math.abs(val) / maxAbs;
+          const isShared = sharedSet.has(i);
+          return (
+            <div
+              key={i}
+              className={`sparkline-bar ${isShared ? "shared" : ""}`}
+              style={{ height: `${Math.max(height * 28, 2)}px` }}
+            />
+          );
+        })}
+      </div>
+      <div className="sparkline-row query-row">
+        {Array.from({ length: N }).map((_, i) => {
+          const val = queryMags[i] ?? 0;
+          const height = Math.abs(val) / maxAbs;
+          const isShared = sharedSet.has(i);
+          return (
+            <div
+              key={i}
+              className={`sparkline-bar query-bar ${isShared ? "shared" : ""}`}
+              style={{ height: `${Math.max(height * 28, 2)}px` }}
+            />
+          );
+        })}
+      </div>
+      <div className="sparkline-legend">
+        <span className="legend-dot doc-dot" /> recipe
+        <span className="legend-dot query-dot" /> query
+        <span className="legend-dot shared-dot" /> overlap
+      </div>
+    </div>
+  );
+}
+
+// Expandable SVD explainability panel for one recipe
+function SVDPanel({ recipe }: { recipe: SVDRecipe }) {
+  const [open, setOpen] = useState(false);
+  const hasSVD = recipe.similarity !== undefined && recipe.doc_magnitudes?.length > 0;
+
+  if (!hasSVD) return null;
+
+  const pct = Math.round(recipe.similarity * 100);
+
+  return (
+    <div className="svd-panel">
+      <button
+        className="svd-toggle"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+      >
+        <span className="svd-score">
+          <span className="svd-score-bar-wrap">
+            <span
+              className="svd-score-bar"
+              style={{ width: `${pct}%` }}
+            />
+          </span>
+          <span className="svd-score-label">{pct}% match</span>
+        </span>
+        <span className="svd-toggle-arrow">{open ? "▲" : "▼"} why this recipe?</span>
+      </button>
+
+      {open && (
+        <div className="svd-detail">
+          {/* Highlighted query keywords */}
+          {recipe.highlighted_keywords.length > 0 && (
+            <div className="svd-section">
+              <p className="svd-section-label">keywords matched</p>
+              <div className="svd-chips">
+                {recipe.highlighted_keywords.map((kw) => (
+                  <span key={kw} className="svd-chip keyword-chip">{kw}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Shared latent dimensions */}
+          {recipe.shared_dims.length > 0 && (
+            <div className="svd-section">
+              <p className="svd-section-label">shared latent concepts</p>
+              {recipe.shared_dims.map((dim) => (
+                <div key={dim.dim} className="svd-dim-row">
+                  <span className="svd-dim-label">dim {dim.dim}</span>
+                  <div className="svd-dim-bar-wrap">
+                    <div
+                      className="svd-dim-bar"
+                      style={{ width: `${Math.abs(dim.magnitude) * 100 * 4}%` }}
+                    />
+                  </div>
+                  <div className="svd-dim-keywords">
+                    {dim.keywords.map((kw) => (
+                      <span key={kw} className="svd-chip">{kw}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Sparkline chart */}
+          <div className="svd-section">
+            <p className="svd-section-label">latent space alignment (all {recipe.doc_magnitudes.length} dims)</p>
+            <DimSparkline
+              docMags={recipe.doc_magnitudes}
+              queryMags={recipe.query_magnitudes}
+              sharedDims={recipe.shared_dims}
+            />
+          </div>
+
+          {/* Top recipe-side dimensions */}
+          <div className="svd-section">
+            <p className="svd-section-label">recipe's strongest concepts</p>
+            {recipe.doc_dims.map((dim) => (
+              <div key={dim.dim} className="svd-dim-row">
+                <span className="svd-dim-label">dim {dim.dim}</span>
+                <div className="svd-dim-keywords">
+                  {dim.keywords.map((kw) => (
+                    <span key={kw} className="svd-chip">{kw}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function OutputPage() {
@@ -16,7 +170,7 @@ export function OutputPage() {
   const location = useLocation();
   const state = (location.state ?? {}) as Partial<OutputState>;
 
-  const recipes: Recipe[] = state.recipes ?? [];
+  const recipes: SVDRecipe[] = state.recipes ?? [];
   const playlist: Playlist | null = state.playlist ?? null;
 
   const songList: string[] = playlist
@@ -64,6 +218,7 @@ export function OutputPage() {
                   <p className="recipe-entry__body">{recipe.description}</p>
                   <p className="recipe-entry__min">{recipe.minutes} min</p>
                   <p className="recipe-entry__meta">Ingredients: {recipe.ingredients.replace(/['\[\]]/g, '')}</p>
+                  <SVDPanel recipe={recipe} />
                 </div>
               ))
             )}

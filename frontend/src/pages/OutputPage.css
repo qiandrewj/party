@@ -139,18 +139,34 @@
 
 @media (min-width: 900px) {
   .candles-aside {
-    display: flex;
+    display: block;
     align-items: center;
     justify-content: center;
     align-self: center;
   }
 }
 
-.candles-img {
-  width: 520px;
+.wine-img {
+  width: 15rem;
   height: auto;
   object-fit: contain;
   display: block;
+  margin-left: 4rem;
+}
+
+.candles-img {
+  width: 40rem;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.long-table-img {
+  width: 40rem;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  margin-left: 4rem;
 }
 
 .section-bottom {

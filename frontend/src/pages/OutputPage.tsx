@@ -1,5 +1,7 @@
 import { useNavigate, useLocation } from "react-router";
 import imgCandles from "../assets/table3.png";
+import imgWine from "../assets/table6.png";
+import imgLongTable from "../assets/table4.png";
 import imgBread from "../assets/bread.png";
 import imgCheese from "../assets/cheese.png";
 import linkIcon from "../assets/link.svg";
@@ -229,10 +231,21 @@ export function OutputPage() {
           </div>
 
           <aside className="candles-aside" aria-hidden="true">
+
+            <img
+              alt="decorative table illustration with wine glasses"
+              className="wine-img"
+              src={imgWine}
+            />
             <img
               alt="decorative candles illustration"
               className="candles-img"
               src={imgCandles}
+            />
+            <img
+              alt="decorative illustration of a long table seen from above"
+              className="long-table-img"
+              src={imgLongTable}
             />
           </aside>
         </div>

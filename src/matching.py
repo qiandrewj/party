@@ -1,10 +1,10 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.decomposition import TruncatedSVD
 
 
 # Builds a TF-IDF index for recipes or playlists
 def build_tfidf_index(data, data_set_category):
-
     if data_set_category == "recipe":
         corpus = [
         f"{d.name} {d.description} {d.tags} {d.ingredients}"
@@ -30,6 +30,26 @@ def build_tfidf_index(data, data_set_category):
         name_vecs = name_vectorizer.fit_transform(name_corpus)
         song_vecs = song_vectorizer.fit_transform(song_corpus)
         return (name_vectorizer, song_vectorizer), (name_vecs, song_vecs)
+
+# Fits TF-IDF on recipe corpus and runs SVD to get latent dimensions
+def build_svd_index(recipes, n_components=100):
+    corpus = [
+        f"{r.name} {r.description} {r.tags} {r.ingredients}"
+        for r in recipes
+    ]
+    if len(corpus) == 0:
+        return None, None
+
+    min_df = 10 if len(corpus) >= 10 else 1
+    vectorizer = TfidfVectorizer(
+        max_features=5000, stop_words='english', max_df=0.8, min_df=min_df, norm='l2')
+    tfidf_matrix = vectorizer.fit_transform(corpus)
+
+    n_components = min(n_components, tfidf_matrix.shape[1] - 1)
+    svd = TruncatedSVD(n_components=n_components, random_state=42)
+    svd.fit(tfidf_matrix)
+
+    return vectorizer, svd
 
 
 # Computes cosine-similarities between recipes and query vector
@@ -71,3 +91,27 @@ def query_data(query, data, data_set_category, vectorizer, doc_by_vocab, name_we
     matches.sort(key=lambda x: x[1], reverse=True)
     list_desc = [x[0] for x in matches]
     return list_desc
+
+def query_svd(query, playlists, vectorizer, svd):
+    # project query into recipe latent space
+    query_tfidf = vectorizer.transform([query])
+    query_vec = svd.transform(query_tfidf)
+
+    # project each playlist's enriched_text into the same latent space
+    playlist_corpus = [p.enriched_text or "" for p in playlists]
+    playlist_tfidf = vectorizer.transform(playlist_corpus)
+    playlist_vecs = svd.transform(playlist_tfidf)
+
+    # cosine similarity in latent space
+    scores = cosine_similarity(query_vec, playlist_vecs).flatten()
+
+    matches = []
+    for i, score in enumerate(scores):
+        matches.append(({
+            'name': playlists[i].name,
+            'songs': playlists[i].songs,
+            'artist': playlists[i].artists,
+        }, float(score)))
+
+    matches.sort(key=lambda x: x[1], reverse=True)
+    return [x[0] for x in matches]

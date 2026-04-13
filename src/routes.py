@@ -124,6 +124,17 @@ def cosine_search_playlists(query):
     matches = matching.query_data(query, playlists, "playlist", vectorizer, doc_by_vocab, 0.7)
     return matches[: 3]
 
+def cosine_search_playlists_svd(query, recipes):
+    if not query or not query.strip():
+        query = "music"
+    playlists = db.session.query(Playlist).all()
+
+    vectorizer, svd = matching.build_svd_index(recipes)
+    if vectorizer is None or svd is None:
+        return []
+    matches = matching.query_svd(query, playlists, vectorizer, svd)
+    return matches[:3]
+
 def register_routes(app):
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
@@ -150,7 +161,8 @@ def register_routes(app):
     @app.route("/api/playlists")
     def playlists_search():
         text = request.args.get("name", "")
-        return jsonify(cosine_search_playlists(text))
+        recipes = db.session.query(Recipe).all()
+        return jsonify(cosine_search_playlists_svd(text, recipes))
 
 
     if USE_LLM:

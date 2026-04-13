@@ -229,3 +229,30 @@ def query_svd(query, data, vectorizer, docs_normed, words_normed, index_to_word,
         })
  
     return results
+
+# Projects playlists into recipe latent space and scores against query
+def query_svd_playlists(query, playlists, vectorizer, words_normed, top_n=3):
+    if words_normed is None:
+        return []
+
+    # project query into recipe latent space (same as query_svd)
+    query_tfidf = vectorizer.transform([query]).toarray()
+    raw = query_tfidf.dot(words_normed)
+    if raw.shape[0] == 0 or np.linalg.norm(raw) == 0:
+        return []
+    query_vec = normalize(raw).squeeze()
+
+    # project each playlist's enriched_text into the same latent space
+    playlist_corpus = [p.enriched_text or "" for p in playlists]
+    playlist_tfidf = vectorizer.transform(playlist_corpus).toarray()
+    docs_normed = normalize(playlist_tfidf.dot(words_normed))
+
+    # cosine similarity in latent space (same as query_svd)
+    sims = docs_normed.dot(query_vec)
+    top_indices = np.argsort(-sims)[:top_n]
+
+    return [{
+        'name': playlists[i].name,
+        'songs': playlists[i].songs,
+        'artist': playlists[i].artists,
+    } for i in top_indices]

@@ -149,11 +149,10 @@ def cosine_search_playlists_svd(query, recipes):
         query = "music"
     playlists = db.session.query(Playlist).all()
 
-    vectorizer, svd = matching.build_svd_index(recipes)
-    if vectorizer is None or svd is None:
+    vectorizer, _, words_normed, _, _ = matching.build_svd_index(recipes, k=40)
+    if vectorizer is None or words_normed is None:
         return []
-    matches = matching.query_svd(query, playlists, vectorizer, svd)
-    return matches[:3]
+    return matching.query_svd_playlists(query, playlists, vectorizer, words_normed)
 
 def register_routes(app):
     @app.route('/', defaults={'path': ''})

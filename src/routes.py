@@ -7,6 +7,7 @@ import json
 import os
 from flask import send_from_directory, request, jsonify
 from models import db, Recipe, Playlist
+from infosci_spark_client import LLMClient
 import matching
 # ── AI toggle ────────────────────────────────────────────────────────────────
 # USE_LLM = False
@@ -134,8 +135,6 @@ def svd_search_recipes(query, dietary_filters, course_filters):
         top_n=5, top_dims=3, top_keywords=6
     )
  
-
-
 def cosine_search_playlists(query):
     if not query or not query.strip():
         query = "music"
@@ -188,12 +187,55 @@ def register_routes(app):
     @app.route("/api/playlists")
     def playlists_search():
         text = request.args.get("name", "")
-        recipes = db.session.query(Recipe).all()
-        return jsonify(cosine_search_playlists_svd(text, recipes))
+        SPARK_API_KEY = os.getenv("SPARK_API_KEY")
 
+        if USE_LLM and SPARK_API_KEY:
+            dietary = request.args.get("dietary", "").split(",")
+            courses = request.args.get("courses", "").split(",")
+            recipes = cosine_search_recipes(text, dietary, courses)[:3]
+
+            context = "\n".join([
+                f"Recipe: {r['name']}\nDescription: {r['description']}"
+                for r in recipes
+            ]) if recipes else "No documents found"
+        
+            client = LLMClient(api_key=SPARK_API_KEY)
+            messages = [
+                {
+                    "role": "system",
+                    "content": "Recommend music for a dinner party using the menu and theme information provided. Respond with JSON."
+                },
+                {
+                    "role": "user",
+                    "content": (f"User query for dinner party: {text}\n\nMenu recipes:\n{context}\n\n"
+                                 "Recommend exactly 5 songs as a JSON object with this structure:\n"
+                                 '{"recommendations": [{"title": "Song Title", "author": "Artist Name"}, ...], '
+                                 '"explanation": "Two sentences explaining why these songs fit the dinner party theme."}\n'
+                                 "Only return the JSON object, nothing else.")                }
+            ]
+
+            response = client.chat(messages)
+            content = response.get("content", "").strip()
+
+            if content.startswith("```"):
+                content = content[3:]
+            if content.startswith("json"):
+                content = content[4:]
+            if content.endswith("```"):
+                content = content[:-3]
+            content = content.strip()
+
+            try: 
+                recommendations = json.loads(content)
+                return jsonify(recommendations)
+            except:
+                return jsonify({"error": "Failed to parse LLM response"}), 500
+        else:
+            recipes = db.session.query(Recipe).all()
+            return jsonify(cosine_search_playlists_svd(text, recipes))
 
     if USE_LLM:
         from llm_routes import register_chat_route
         # register_chat_route(app, json_search)
-        register_chat_route(app, cosine_search_recipes)
-        register_chat_route(app, cosine_search_playlists)
+        # register_chat_route(app, cosine_search_recipes)
+        # register_chat_route(app, cosine_search_playlists)

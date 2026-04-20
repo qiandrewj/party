@@ -105,7 +105,7 @@ export function InputPage() {
   const [courses, setCourses] = useState<string[]>(
     () => savedState.courses ?? [],
   );
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [recipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Build the search query regardless of mode

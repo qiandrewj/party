@@ -14,6 +14,16 @@ export interface Recipe {
   query_magnitudes?: number[];
 }
 
+export interface Recommendation {
+  title: string;
+  author: string;
+}
+
+export interface PlaylistRecommendations {
+  recommendations: Recommendation[];
+  explanation: string;
+}
+
 export interface Playlist {
   name: string;
   songs: string;

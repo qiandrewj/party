@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router";
 import imgFood from "../assets/tomato.png";
-import Chat from "../Chat";
-import { Recipe, Playlist } from "../types";
+import { Recipe, Playlist, PlaylistRecommendations } from "../types";
 import "./InputPage.css";
 
 const DIETARY_FILTERS = [
@@ -189,12 +188,21 @@ export function InputPage() {
         fetch(`/api/playlists?name=${encodeURIComponent(q)}`),
       ]);
       const fetchedRecipes: Recipe[] = await recipesRes.json();
-      const fetchedPlaylists: Playlist[] = await playlistRes.json();
+      const playlistData = await playlistRes.json();
+      
+      // Handle array and object (LLM) responses
+      let playlist: Playlist | PlaylistRecommendations | null = null;
+      if (Array.isArray(playlistData)) {
+        playlist = playlistData[0] ?? null;
+      } else if (playlistData && typeof playlistData === "object") {
+        playlist = playlistData;
+      }
+      
       navigate("/loading", {
         state: {
           ...inputState,
           recipes: fetchedRecipes,
-          playlist: fetchedPlaylists[0] ?? null,
+          playlist,
         },
       });
     } catch (err) {
@@ -384,12 +392,6 @@ export function InputPage() {
               </p>
             </div>
           ))}
-        </div>
-      )}
-
-      {useLlm && (
-        <div className="chat-dock">
-          <Chat onSearchTerm={handleSearch} />
         </div>
       )}
     </div>

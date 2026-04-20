@@ -5,13 +5,13 @@ import imgLongTable from "../assets/table4.png";
 import imgBread from "../assets/bread.png";
 import imgCheese from "../assets/cheese.png";
 import linkIcon from "../assets/link.svg";
-import { DimInfo, SVDRecipe, Playlist } from "../types";
+import { DimInfo, SVDRecipe, Playlist, PlaylistRecommendations } from "../types";
 import "./OutputPage.css";
 import { useState } from "react";
 
 interface OutputState {
   recipes: SVDRecipe[];
-  playlist: Playlist | null;
+  playlist: Playlist | PlaylistRecommendations | null;
 }
 
 // Mini sparkline: renders a bar chart of the first N latent dimensions
@@ -177,23 +177,11 @@ export function OutputPage() {
   const state = (location.state ?? {}) as Partial<OutputState>;
 
   const recipes: SVDRecipe[] = state.recipes ?? [];
-  const playlist: Playlist | null = state.playlist ?? null;
+  const playlist: Playlist | PlaylistRecommendations | null = state.playlist ?? null;
 
-  const songList: string[] = playlist
-    ? playlist.songs
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .slice(0, 10)
-    : [];
-
-  const artistList: string[] = playlist
-    ? playlist.artist
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .slice(0, 10)
-    : [];
+  const isLLMPlaylist = (p: any): p is PlaylistRecommendations => {
+    return p && "recommendations" in p && "explanation" in p;
+  };
 
   const handleRoundTwo = () => {
     navigate("/", { state });
@@ -255,20 +243,50 @@ export function OutputPage() {
         <h2 className="section-heading">TUNES</h2>
         <div className="playlist">
           {playlist ? (
-            <>
-              <p className="playlist-title">{playlist.name}</p>
-              {songList.length === 0 ? (
-                <p className="body-text">No songs found.</p>
-              ) : (
-                songList.map((song, i) => (
-                  <p key={i} className="playlist-row">
-                    <span className="song-name">{song}</span>
-                    <span className="recipe-entry__dots" aria-hidden="true" />
-                    <span className="artist-name">{artistList[i] || ""}</span>
-                  </p>
-                ))
-              )}
-            </>
+            isLLMPlaylist(playlist) ? (
+              // LLM recommendation format
+              <>
+                <div className="playlist-recommendations">
+                  {playlist.recommendations.map((rec, i) => (
+                    <p key={i} className="playlist-row">
+                      <span className="song-name">{rec.title}</span>
+                      <span className="recipe-entry__dots" aria-hidden="true" />
+                      <span className="artist-name">{rec.author}</span>
+                    </p>
+                  ))}
+                </div>
+                <p className="playlist-explanation">{playlist.explanation}</p>
+              </>
+            ) : (
+              // Traditional playlist format
+              <>
+                <p className="playlist-title">{playlist.name}</p>
+                {(() => {
+                  const songList = playlist.songs
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter(Boolean)
+                    .slice(0, 10);
+                  const artistList = playlist.artist
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter(Boolean)
+                    .slice(0, 10);
+
+                  return songList.length === 0 ? (
+                    <p className="body-text">No songs found.</p>
+                  ) : (
+                    songList.map((song, i) => (
+                      <p key={i} className="playlist-row">
+                        <span className="song-name">{song}</span>
+                        <span className="recipe-entry__dots" aria-hidden="true" />
+                        <span className="artist-name">{artistList[i] || ""}</span>
+                      </p>
+                    ))
+                  );
+                })()}
+              </>
+            )
           ) : (
             <p className="body-text">No playlist found.</p>
           )}

@@ -181,6 +181,36 @@ def register_routes(app):
         text = request.args.get("name", "")
         dietary = request.args.get("dietary", "").split(",")
         courses = request.args.get("courses", "").split(",")
+        SPARK_API_KEY = os.getenv("SPARK_API_KEY")
+
+        if USE_LLM and SPARK_API_KEY:
+            client = LLMClient(api_key=SPARK_API_KEY)
+            messages = [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are an assistant that rewrites dinner party recipe search queries to be more robust, "
+                        "clear, and descriptive for a search engine. Expand on vague or ambiguous queries, "
+                        "clarify user intent, and add relevant context if missing. Only return the improved query."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": f"Original user query: {text}\nRewrite this query for a recipe search engine:"
+                }
+            ]
+            response = client.chat(messages)
+            modified_query = response.get("content", "").strip()
+
+            if modified_query.startswith("```"):
+                modified_query = modified_query[3:]
+            if modified_query.endswith("```"):
+                modified_query = modified_query[:-3]
+            modified_query = modified_query.strip()
+
+            text = modified_query
+            print(text)
+
         return jsonify(svd_search_recipes(text, dietary, courses))
     
     #playlists

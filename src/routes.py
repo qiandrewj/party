@@ -9,6 +9,7 @@ from flask import send_from_directory, request, jsonify
 from models import db, Recipe, Playlist
 from infosci_spark_client import LLMClient
 import matching
+from flask import g
 # ── AI toggle ────────────────────────────────────────────────────────────────
 # USE_LLM = False
 USE_LLM = True
@@ -207,16 +208,18 @@ def register_routes(app):
             if modified_query.endswith("```"):
                 modified_query = modified_query[:-3]
             modified_query = modified_query.strip()
-
             text = modified_query
-            print(text)
+
+        # Store the modified query in Flask's g context for use in other routes
+        g.modified_query = text
 
         return jsonify(svd_search_recipes(text, dietary, courses))
     
     #playlists
     @app.route("/api/playlists")
     def playlists_search():
-        text = request.args.get("name", "")
+        # Use the modified query from g if available, otherwise use the user query
+        text = getattr(g, "modified_query", None) or request.args.get("name", "")
         SPARK_API_KEY = os.getenv("SPARK_API_KEY")
 
         if USE_LLM and SPARK_API_KEY:

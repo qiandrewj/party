@@ -84,6 +84,6 @@ Then open `http://localhost:5173` in your browser!
 Build React and serve everything through Flask:
 ```bash
 cd frontend && npm install && npm run build && cd ..
-python src/app.py
+python3 src/app.py
 ```
 Open `http://localhost:5001`.

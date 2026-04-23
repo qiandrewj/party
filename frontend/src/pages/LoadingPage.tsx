@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
-import imgIstockphoto2098046718612X612RemovebgPreview2 from "../assets/table2.png";
+import table2 from "../assets/table2.png";
 
 const loadingMessages = [
   "setting the table",
@@ -79,7 +79,7 @@ export function LoadingPage() {
         <img
           alt="table setting illustration"
           className="max-w-none object-cover pointer-events-none size-full"
-          src={imgIstockphoto2098046718612X612RemovebgPreview2}
+          src={table2}
         />
       </div>
 

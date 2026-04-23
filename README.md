@@ -1,10 +1,5 @@
 # bring the party!
 
-## Contents
-
-- [Quick Start](#quick-start)
-- [Architecture](#architecture)
-
 ## Quick Start
 
 For the fastest way to get started with development:

@@ -28,6 +28,24 @@
   font-weight: 400;
 }
 
+.section-subheading {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  color: var(--color-text);
+  line-height: var(--line-body);
+  margin: 0 0 1.5rem;
+}
+
+.updated-query {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  color: var(--color-accent);
+  line-height: var(--line-body);
+  margin: 0 0 1.5rem;
+  font-weight: 550;
+  text-align: center;
+}
+
 .section-menu {
   margin-bottom: var(--space-section-gap);
 }

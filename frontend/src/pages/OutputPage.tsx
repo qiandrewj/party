@@ -17,6 +17,7 @@ import { useState } from "react";
 interface OutputState {
   recipes: SVDRecipe[];
   playlist: Playlist | PlaylistRecommendations | null;
+  llmQuery: string;
 }
 
 // Mini sparkline: renders a bar chart of the first N latent dimensions
@@ -199,6 +200,7 @@ export function OutputPage() {
   const recipes: SVDRecipe[] = state.recipes ?? [];
   const playlist: Playlist | PlaylistRecommendations | null =
     state.playlist ?? null;
+  const llmQuery: string = state.llmQuery ?? "";
 
   const isLLMPlaylist = (p: any): p is PlaylistRecommendations => {
     return p && "recommendations" in p && "explanation" in p;
@@ -220,6 +222,14 @@ export function OutputPage() {
   return (
     <div className="output-page">
       {/* Menu section */}
+      {llmQuery && (
+        <p className="section-subheading">
+          We've refined your input to include more details. <br /> Showing results for:
+          <span className="updated-query">
+            {" " + llmQuery}
+          </span>
+        </p>
+      )}
       <section className="section-menu">
         <h1 className="section-heading">MENU</h1>
 
@@ -339,7 +349,7 @@ export function OutputPage() {
         <img alt="" className="bread-img" src={imgBread} />
         <img alt="" className="cheese-img" src={imgCheese} />
       </div>
-     
+
     </div>
   );
 }

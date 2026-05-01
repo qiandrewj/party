@@ -259,7 +259,7 @@ def query_svd_recipes(query, data, vectorizer, docs_normed, words_normed, index_
             'query_magnitudes': query_vec.tolist(),
         })
  
-    return results
+    return query, results
 
 def query_svd_playlists(query, playlists, vectorizer, words_normed, top_n=3, name_weight=0.4):
     """

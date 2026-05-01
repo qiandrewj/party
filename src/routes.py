@@ -11,7 +11,6 @@ from infosci_spark_client import LLMClient
 import matching
 from flask import g
 # ── AI toggle ────────────────────────────────────────────────────────────────
-# USE_LLM = False
 USE_LLM = True
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -110,7 +109,6 @@ def cosine_search_recipes(query, dietary_filters, course_filters):
     recipes = db.session.query(Recipe).all()
     recipes = filter_recipes(recipes, dietary_filters, DIETARY_FILTERS)
     recipes = filter_recipes(recipes, course_filters, COURSE_FILTERS, force_include=True)
-    # print(f"Filtered from 2000 to {len(recipes)} recipes based on dietary filters: {dietary_filters} and course filters: {course_filters}")
 
     vectorizer, doc_by_vocab = matching.build_tfidf_index(recipes, "recipe")
     if vectorizer is None or doc_by_vocab is None:
@@ -129,12 +127,14 @@ def svd_search_recipes(query, dietary_filters, course_filters):
     vectorizer, docs_normed, words_normed, s, index_to_word = matching.build_svd_index(recipes, k=40)
     if vectorizer is None or docs_normed is None:
         # Fallback to TF-IDF plain results
-        return cosine_search_recipes(query, dietary_filters, course_filters)
+        results = cosine_search_recipes(query, dietary_filters, course_filters)
+        return {"query": query, "recipes": results}
  
-    return matching.query_svd_recipes(
+    processed_query, results = matching.query_svd_recipes(
         query, recipes, vectorizer, docs_normed, words_normed, index_to_word,
         top_n=5, top_dims=3, top_keywords=6
     )
+    return {"query": processed_query, "recipes": results}
  
 def cosine_search_playlists(query):
     if not query or not query.strip():
@@ -213,7 +213,11 @@ def register_routes(app):
         # Store the modified query in Flask's g context for use in other routes
         g.modified_query = text
 
-        return jsonify(svd_search_recipes(text, dietary, courses))
+        # Get search results and store in g for playlists endpoint
+        results_data = svd_search_recipes(text, dietary, courses)
+        g.recipe_results = results_data.get("recipes", [])
+        
+        return jsonify(results_data)
     
     #playlists
     @app.route("/api/playlists")
@@ -225,8 +229,16 @@ def register_routes(app):
         if USE_LLM and SPARK_API_KEY:
             dietary = request.args.get("dietary", "").split(",")
             courses = request.args.get("courses", "").split(",")
-            recipes = cosine_search_recipes(text, dietary, courses)[:3]
-
+            
+            # Use recipes from g if available (from preceding recipes endpoint call), otherwise fetch
+            recipes = getattr(g, "recipe_results", None)
+            
+            if recipes is None:
+                recipes_data = svd_search_recipes(text, dietary, courses)
+                recipes = recipes_data.get("recipes", [])
+            
+            recipes = recipes[:5]
+                
             context = "\n".join([
                 f"Recipe: {r['name']}\nDescription: {r['description']}"
                 for r in recipes
@@ -244,7 +256,7 @@ def register_routes(app):
                                  "Recommend exactly 5 songs as a JSON object with this structure:\n"
                                  '{"recommendations": [{"title": "Song Title", "author": "Artist Name"}, ...], '
                                  '"explanation": "Two sentences explaining why these songs fit the dinner party theme."}\n'
-                                 "Only return the JSON object, nothing else.")                }
+                                 "Only return the JSON object, nothing else. When making these recommendations, focus on the given recipes, including in the explanation how the menu relates to the music. It should be clear that you are recommending songs based on the menu and not only the query.")                }
             ]
 
             response = client.chat(messages)

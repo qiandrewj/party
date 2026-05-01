@@ -70,12 +70,23 @@ export function LoadingPage() {
 
     const fetchData = async () => {
       try {
-        const [recipesRes, playlistRes] = await Promise.all([
-          fetch(url),
-          fetch(`/api/playlists?name=${encodeURIComponent(q)}`),
-        ]);
-        const fetchedRecipes: Recipe[] = await recipesRes.json();
+        // Fetch recipes first
+        const recipesRes = await fetch(url);
+        const recipesData = await recipesRes.json();
+
+        // Then fetch playlists (same request context preserves g.search_recipes)
+        const playlistRes = await fetch(`/api/playlists?name=${encodeURIComponent(q)}`);
         const playlistData = await playlistRes.json();
+
+        // Handle new response format with query and recipes
+        let fetchedRecipes: Recipe[] = [];
+        if (Array.isArray(recipesData)) {
+          // Legacy format: array of recipes
+          fetchedRecipes = recipesData;
+        } else if (recipesData && typeof recipesData === "object" && "recipes" in recipesData) {
+          // New format: { query: string, recipes: Recipe[] }
+          fetchedRecipes = recipesData.recipes || [];
+        }
 
         // Handle array and object (LLM) responses
         let playlist: Playlist | PlaylistRecommendations | null = null;
@@ -85,10 +96,13 @@ export function LoadingPage() {
           playlist = playlistData;
         }
 
-        navigate("/output", { state: { ...inputState, recipes: fetchedRecipes, playlist } });
+        // pass in new query, if updated by the LLM
+        const llmQuery = recipesData.query || "";
+
+        navigate("/output", { state: { ...inputState, recipes: fetchedRecipes, playlist, llmQuery } });
       } catch (err) {
         console.error("Failed to fetch party data:", err);
-        navigate("/output", { state: { ...inputState, recipes: [], playlist: null } });
+        navigate("/output", { state: { ...inputState, recipes: [], playlist: null, llmQuery: "" } });
       }
     };
 

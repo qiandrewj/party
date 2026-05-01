@@ -11,7 +11,6 @@ from infosci_spark_client import LLMClient
 import matching
 from flask import g
 # ── AI toggle ────────────────────────────────────────────────────────────────
-# USE_LLM = False
 USE_LLM = True
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -129,12 +128,14 @@ def svd_search_recipes(query, dietary_filters, course_filters):
     vectorizer, docs_normed, words_normed, s, index_to_word = matching.build_svd_index(recipes, k=40)
     if vectorizer is None or docs_normed is None:
         # Fallback to TF-IDF plain results
-        return cosine_search_recipes(query, dietary_filters, course_filters)
+        results = cosine_search_recipes(query, dietary_filters, course_filters)
+        return {"query": query, "recipes": results}
  
-    return matching.query_svd_recipes(
+    processed_query, results = matching.query_svd_recipes(
         query, recipes, vectorizer, docs_normed, words_normed, index_to_word,
         top_n=5, top_dims=3, top_keywords=6
     )
+    return {"query": processed_query, "recipes": results}
  
 def cosine_search_playlists(query):
     if not query or not query.strip():

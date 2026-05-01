@@ -74,8 +74,18 @@ export function LoadingPage() {
           fetch(url),
           fetch(`/api/playlists?name=${encodeURIComponent(q)}`),
         ]);
-        const fetchedRecipes: Recipe[] = await recipesRes.json();
+        const recipesData = await recipesRes.json();
         const playlistData = await playlistRes.json();
+
+        // Handle new response format with query and recipes
+        let fetchedRecipes: Recipe[] = [];
+        if (Array.isArray(recipesData)) {
+          // Legacy format: array of recipes
+          fetchedRecipes = recipesData;
+        } else if (recipesData && typeof recipesData === "object" && "recipes" in recipesData) {
+          // New format: { query: string, recipes: Recipe[] }
+          fetchedRecipes = recipesData.recipes || [];
+        }
 
         // Handle array and object (LLM) responses
         let playlist: Playlist | PlaylistRecommendations | null = null;
@@ -85,10 +95,13 @@ export function LoadingPage() {
           playlist = playlistData;
         }
 
-        navigate("/output", { state: { ...inputState, recipes: fetchedRecipes, playlist } });
+        // pass in new query, if updated by the LLM
+        const llmQuery = recipesData.query || "";
+
+        navigate("/output", { state: { ...inputState, recipes: fetchedRecipes, playlist, llmQuery } });
       } catch (err) {
         console.error("Failed to fetch party data:", err);
-        navigate("/output", { state: { ...inputState, recipes: [], playlist: null } });
+        navigate("/output", { state: { ...inputState, recipes: [], playlist: null, llmQuery: "" } });
       }
     };
 

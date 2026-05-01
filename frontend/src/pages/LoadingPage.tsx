@@ -70,11 +70,12 @@ export function LoadingPage() {
 
     const fetchData = async () => {
       try {
-        const [recipesRes, playlistRes] = await Promise.all([
-          fetch(url),
-          fetch(`/api/playlists?name=${encodeURIComponent(q)}`),
-        ]);
+        // Fetch recipes first
+        const recipesRes = await fetch(url);
         const recipesData = await recipesRes.json();
+
+        // Then fetch playlists (same request context preserves g.search_recipes)
+        const playlistRes = await fetch(`/api/playlists?name=${encodeURIComponent(q)}`);
         const playlistData = await playlistRes.json();
 
         // Handle new response format with query and recipes

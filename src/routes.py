@@ -214,7 +214,11 @@ def register_routes(app):
         # Store the modified query in Flask's g context for use in other routes
         g.modified_query = text
 
-        return jsonify(svd_search_recipes(text, dietary, courses))
+        # Get search results and store in g for playlists endpoint
+        results_data = svd_search_recipes(text, dietary, courses)
+        g.recipe_results = results_data.get("recipes", [])
+        
+        return jsonify(results_data)
     
     #playlists
     @app.route("/api/playlists")
@@ -226,8 +230,21 @@ def register_routes(app):
         if USE_LLM and SPARK_API_KEY:
             dietary = request.args.get("dietary", "").split(",")
             courses = request.args.get("courses", "").split(",")
-            recipes = cosine_search_recipes(text, dietary, courses)[:3]
-
+            
+            # Use recipes from g if available (from preceding recipes endpoint call), otherwise fetch
+            recipes = getattr(g, "recipe_results", None)
+            
+            print("hello")
+            print("recipes from content " + ("don't exist" if recipes is None else "exist"))
+            
+            if recipes is None:
+                recipes_data = svd_search_recipes(text, dietary, courses)
+                recipes = recipes_data.get("recipes", [])
+            
+            recipes = recipes[:5]
+            for r in recipes:
+                print(r["name"])
+                
             context = "\n".join([
                 f"Recipe: {r['name']}\nDescription: {r['description']}"
                 for r in recipes
@@ -245,7 +262,7 @@ def register_routes(app):
                                  "Recommend exactly 5 songs as a JSON object with this structure:\n"
                                  '{"recommendations": [{"title": "Song Title", "author": "Artist Name"}, ...], '
                                  '"explanation": "Two sentences explaining why these songs fit the dinner party theme."}\n'
-                                 "Only return the JSON object, nothing else.")                }
+                                 "Only return the JSON object, nothing else. When making these recommendations, focus on the given recipes, including in the explanation how the menu relates to the music. It should be clear that you are recommending songs based on the menu and not only the query.")                }
             ]
 
             response = client.chat(messages)

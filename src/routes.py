@@ -222,25 +222,22 @@ def register_routes(app):
     #playlists
     @app.route("/api/playlists")
     def playlists_search():
-        # Get query and filters from request
-        text = request.args.get("name", "")
-        dietary = request.args.get("dietary", "").split(",")
-        courses = request.args.get("courses", "").split(",")
-        
+        # Use the modified query from g if available, otherwise use the user query
+        text = getattr(g, "modified_query", None) or request.args.get("name", "")
         SPARK_API_KEY = os.getenv("SPARK_API_KEY")
 
         if USE_LLM and SPARK_API_KEY:
-            # Get recipes passed from frontend, or search if not provided
-            recipes_json = request.args.get("recipes", "")
-            if recipes_json:
-                try:
-                    recipes = json.loads(recipes_json)[:5]
-                except:
-                    recipes_data = svd_search_recipes(text, dietary, courses)
-                    recipes = recipes_data.get("recipes", [])[:5]
-            else:
+            dietary = request.args.get("dietary", "").split(",")
+            courses = request.args.get("courses", "").split(",")
+            
+            # Use recipes from g if available (from preceding recipes endpoint call), otherwise fetch
+            recipes = getattr(g, "recipe_results", None)
+            
+            if recipes is None:
                 recipes_data = svd_search_recipes(text, dietary, courses)
-                recipes = recipes_data.get("recipes", [])[:5]
+                recipes = recipes_data.get("recipes", [])
+            
+            recipes = recipes[:5]
                 
             context = "\n".join([
                 f"Recipe: {r['name']}\nDescription: {r['description']}"

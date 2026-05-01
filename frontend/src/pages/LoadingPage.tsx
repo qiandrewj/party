@@ -74,6 +74,10 @@ export function LoadingPage() {
         const recipesRes = await fetch(url);
         const recipesData = await recipesRes.json();
 
+        // Then fetch playlists (same request context preserves g.search_recipes)
+        const playlistRes = await fetch(`/api/playlists?name=${encodeURIComponent(q)}`);
+        const playlistData = await playlistRes.json();
+
         // Handle new response format with query and recipes
         let fetchedRecipes: Recipe[] = [];
         if (Array.isArray(recipesData)) {
@@ -83,13 +87,6 @@ export function LoadingPage() {
           // New format: { query: string, recipes: Recipe[] }
           fetchedRecipes = recipesData.recipes || [];
         }
-
-        // Then fetch playlists with the actual recipes returned
-        const playlistUrl = new URL("/api/playlists", window.location.origin);
-        playlistUrl.searchParams.set("name", q);
-        playlistUrl.searchParams.set("recipes", JSON.stringify(fetchedRecipes));
-        const playlistRes = await fetch(playlistUrl.toString());
-        const playlistData = await playlistRes.json();
 
         // Handle array and object (LLM) responses
         let playlist: Playlist | PlaylistRecommendations | null = null;

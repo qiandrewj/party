@@ -109,7 +109,6 @@ def cosine_search_recipes(query, dietary_filters, course_filters):
     recipes = db.session.query(Recipe).all()
     recipes = filter_recipes(recipes, dietary_filters, DIETARY_FILTERS)
     recipes = filter_recipes(recipes, course_filters, COURSE_FILTERS, force_include=True)
-    # print(f"Filtered from 2000 to {len(recipes)} recipes based on dietary filters: {dietary_filters} and course filters: {course_filters}")
 
     vectorizer, doc_by_vocab = matching.build_tfidf_index(recipes, "recipe")
     if vectorizer is None or doc_by_vocab is None:
@@ -234,16 +233,11 @@ def register_routes(app):
             # Use recipes from g if available (from preceding recipes endpoint call), otherwise fetch
             recipes = getattr(g, "recipe_results", None)
             
-            print("hello")
-            print("recipes from content " + ("don't exist" if recipes is None else "exist"))
-            
             if recipes is None:
                 recipes_data = svd_search_recipes(text, dietary, courses)
                 recipes = recipes_data.get("recipes", [])
             
             recipes = recipes[:5]
-            for r in recipes:
-                print(r["name"])
                 
             context = "\n".join([
                 f"Recipe: {r['name']}\nDescription: {r['description']}"

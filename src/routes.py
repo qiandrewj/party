@@ -213,31 +213,40 @@ def register_routes(app):
         # Store the modified query in Flask's g context for use in other routes
         g.modified_query = text
 
-        # Get search results and store in g for playlists endpoint
+        # Get search results
         results_data = svd_search_recipes(text, dietary, courses)
-        g.recipe_results = results_data.get("recipes", [])
         
         return jsonify(results_data)
     
     #playlists
-    @app.route("/api/playlists")
+    @app.route("/api/playlists", methods=["GET", "POST"])
     def playlists_search():
-        # Use the modified query from g if available, otherwise use the user query
-        text = getattr(g, "modified_query", None) or request.args.get("name", "")
+        if request.method == "POST":
+            body = request.get_json(silent=True) or {}
+            text = body.get("name", "")
+            recipes_from_client = body.get("recipes", [])
+            dietary = []
+            courses = []
+        else:
+            text = request.args.get("name", "")
+            dietary = request.args.get("dietary", "").split(",")
+            courses = request.args.get("courses", "").split(",")
+            recipes_from_client = []
+
         SPARK_API_KEY = os.getenv("SPARK_API_KEY")
 
         if USE_LLM and SPARK_API_KEY:
-            dietary = request.args.get("dietary", "").split(",")
-            courses = request.args.get("courses", "").split(",")
-            
-            # Use recipes from g if available (from preceding recipes endpoint call), otherwise fetch
-            recipes = getattr(g, "recipe_results", None)
-            
-            if recipes is None:
+            # Get recipes passed from frontend, or search if not provided
+            recipes_json = request.args.get("recipes", "")
+            if recipes_json:
+                try:
+                    recipes = json.loads(recipes_json)[:5]
+                except:
+                    recipes_data = svd_search_recipes(text, dietary, courses)
+                    recipes = recipes_data.get("recipes", [])[:5]
+            else:
                 recipes_data = svd_search_recipes(text, dietary, courses)
-                recipes = recipes_data.get("recipes", [])
-            
-            recipes = recipes[:5]
+                recipes = recipes_data.get("recipes", [])[:5]
                 
             context = "\n".join([
                 f"Recipe: {r['name']}\nDescription: {r['description']}"
@@ -248,7 +257,7 @@ def register_routes(app):
             messages = [
                 {
                     "role": "system",
-                    "content": "Recommend music for a dinner party using the menu and theme information provided. Respond with JSON."
+                    "content": "Recommend music for a dinner party using the menu and theme information provided. You will be given a specific menu of recipes. You MUST base your music recommendations exclusively on the recipes listed in the user message. Do not reference, invent, or draw on any recipes not explicitly listed. Respond with JSON."
                 },
                 {
                     "role": "user",
